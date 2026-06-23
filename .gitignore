@@ -1,0 +1,18 @@
+# Virtual environment
+Lib/
+Scripts/
+include/
+etc/
+share/
+pyvenv.cfg
+
+# PyCharm
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
