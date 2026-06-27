@@ -4,106 +4,91 @@
 
 -- Q1: Top 5 funds by AUM
 SELECT
-    f.scheme_name,
-    f.fund_house,
-    SUM(a.aum_crores) AS total_aum
-FROM fact_aum a
-JOIN dim_fund f ON a.amfi_code = f.amfi_code
-GROUP BY f.amfi_code
-ORDER BY total_aum DESC
+    fund_house,
+    SUM(aum_crore) AS total_aum_crore
+FROM fact_aum
+GROUP BY fund_house
+ORDER BY total_aum_crore DESC
 LIMIT 5;
 
--- Q2: Average NAV per month for each fund
+-- Q2: Average NAV per month per fund
 SELECT
-    f.scheme_name,
-    d.year,
-    d.month,
-    ROUND(AVG(n.nav_value), 2) AS avg_nav
-FROM fact_nav n
-JOIN dim_fund f ON n.amfi_code = f.amfi_code
-JOIN dim_date d ON n.date_id = d.date_id
-GROUP BY f.amfi_code, d.year, d.month
-ORDER BY f.scheme_name, d.year, d.month;
+    amfi_code,
+    STRFTIME('%Y-%m', date) AS month,
+    ROUND(AVG(nav), 2)      AS avg_nav
+FROM fact_nav
+GROUP BY amfi_code, month
+ORDER BY amfi_code, month;
 
--- Q3: SIP transaction YoY growth
+-- Q3: SIP inflow YoY growth
 SELECT
-    d.year,
-    COUNT(*) AS sip_count,
-    ROUND(SUM(t.amount), 2) AS total_sip_amount
-FROM fact_transactions t
-JOIN dim_date d ON t.date_id = d.date_id
-WHERE t.transaction_type = 'SIP'
-GROUP BY d.year
-ORDER BY d.year;
+    STRFTIME('%Y', month) AS year,
+    SUM(sip_inflow_crore) AS total_sip_crore
+FROM monthly_sip_inflows
+GROUP BY year
+ORDER BY year;
 
 -- Q4: Total transactions by state
 SELECT
     state,
-    COUNT(*) AS transaction_count,
-    ROUND(SUM(amount), 2) AS total_amount
+    COUNT(*)              AS txn_count,
+    SUM(amount_inr)       AS total_amount_inr
 FROM fact_transactions
 GROUP BY state
-ORDER BY total_amount DESC;
+ORDER BY total_amount_inr DESC;
 
 -- Q5: Funds with expense ratio less than 1%
 SELECT
-    f.scheme_name,
-    f.fund_house,
-    f.category,
-    p.expense_ratio
-FROM fact_performance p
-JOIN dim_fund f ON p.amfi_code = f.amfi_code
-WHERE p.expense_ratio < 1.0
-ORDER BY p.expense_ratio ASC;
+    scheme_name,
+    expense_ratio_pct,
+    risk_grade
+FROM fact_performance
+WHERE expense_ratio_pct < 1.0
+ORDER BY expense_ratio_pct ASC;
 
--- Q6: Best performing funds by 3 year return
+-- Q6: Top 10 funds by 3 year return
 SELECT
-    f.scheme_name,
-    f.category,
-    ROUND(AVG(p.return_3yr), 2) AS avg_3yr_return
-FROM fact_performance p
-JOIN dim_fund f ON p.amfi_code = f.amfi_code
-GROUP BY f.amfi_code
-ORDER BY avg_3yr_return DESC
+    scheme_name,
+    fund_house,
+    return_3yr_pct
+FROM fact_performance
+ORDER BY return_3yr_pct DESC
 LIMIT 10;
 
--- Q7: Monthly SIP vs Lumpsum vs Redemption comparison
+-- Q7: Transactions split by type and gender
 SELECT
-    d.year,
-    d.month,
     transaction_type,
-    COUNT(*) AS count,
-    ROUND(SUM(amount), 2) AS total_amount
-FROM fact_transactions t
-JOIN dim_date d ON t.date_id = d.date_id
-GROUP BY d.year, d.month, transaction_type
-ORDER BY d.year, d.month;
+    gender,
+    COUNT(*)        AS count,
+    SUM(amount_inr) AS total_inr
+FROM fact_transactions
+GROUP BY transaction_type, gender
+ORDER BY transaction_type, total_inr DESC;
 
--- Q8: Funds with highest Sharpe ratio (best risk-adjusted return)
+-- Q8: Top 5 funds by Sharpe ratio
 SELECT
-    f.scheme_name,
-    f.risk_grade,
-    ROUND(AVG(p.sharpe_ratio), 3) AS avg_sharpe
-FROM fact_performance p
-JOIN dim_fund f ON p.amfi_code = f.amfi_code
-GROUP BY f.amfi_code
-ORDER BY avg_sharpe DESC
+    scheme_name,
+    risk_grade,
+    ROUND(sharpe_ratio, 3) AS sharpe_ratio
+FROM fact_performance
+ORDER BY sharpe_ratio DESC
 LIMIT 5;
 
--- Q9: KYC status breakdown of investors
+-- Q9: KYC status breakdown
 SELECT
     kyc_status,
-    COUNT(*) AS investor_count,
-    ROUND(SUM(amount), 2) AS total_invested
+    COUNT(*)        AS investor_count,
+    SUM(amount_inr) AS total_invested_inr
 FROM fact_transactions
 GROUP BY kyc_status;
 
--- Q10: Category wise average expense ratio
+-- Q10: Average returns by fund category
 SELECT
-    f.category,
-    ROUND(AVG(p.expense_ratio), 3) AS avg_expense_ratio,
-    COUNT(DISTINCT f.amfi_code) AS fund_count
+    p.risk_grade,
+    ROUND(AVG(p.return_1yr_pct), 2) AS avg_1yr,
+    ROUND(AVG(p.return_3yr_pct), 2) AS avg_3yr,
+    ROUND(AVG(p.return_5yr_pct), 2) AS avg_5yr,
+    COUNT(*)                         AS fund_count
 FROM fact_performance p
-JOIN dim_fund f ON p.amfi_code = f.amfi_code
-GROUP BY f.category
-ORDER BY avg_expense_ratio;
+GROUP BY p.risk_grade
+ORDER BY avg_3yr DESC;

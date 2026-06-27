@@ -1,0 +1,11 @@
+
+DATA QUALITY SUMMARY — Day 1
+==============================
+Total funds in fund_master  : 40
+Total funds in nav_history  : 40
+Missing from nav_history    : 0
+Extra in nav_history        : 0
+
+Anomalies found across CSVs:
+  - 04_monthly_sip_inflows.csv: Missing values in [yoy_growth_pct] (12 rows)
+    Reason: First 12 months have no previous year to compare — expected.
