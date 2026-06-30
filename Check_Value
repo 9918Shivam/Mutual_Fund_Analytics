@@ -1,0 +1,14 @@
+import pandas as pd
+# aum = pd.read_csv("data/processed/03_aum_by_fund_house_clean.csv")
+# aum["date"] = pd.to_datetime(aum["date"])
+# latest_date = aum["date"].max()
+# latest_aum = aum[aum["date"] == latest_date]["aum_crore"].sum()
+# print(f"Latest date: {latest_date}")
+# print(f"Total AUM on latest date: ₹{latest_aum:,} Crore")
+
+scorecard = pd.read_csv("data/processed/fund_scorecard.csv")
+alpha_beta = pd.read_csv("data/processed/alpha_beta.csv")
+
+print(f"Avg Sharpe Ratio : {scorecard['sharpe_ratio'].mean():.2f}")
+print(f"Avg 3yr CAGR     : {scorecard['cagr_3yr'].mean():.2f}")
+print(f"Avg Alpha        : {alpha_beta['alpha_ann'].mean():.2f}")
